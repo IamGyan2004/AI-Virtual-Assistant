@@ -1,0 +1,76 @@
+.app-container {
+  font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #1c1c1c;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-panel,
+.assistant-panel {
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  padding: 24px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.auth-panel input,
+.assistant-panel button,
+.assistant-panel textarea {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d4d4d4;
+  outline: none;
+}
+
+.auth-panel button,
+.assistant-panel button {
+  cursor: pointer;
+  background: #2f7dfa;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+}
+
+.assistant-panel button.logout {
+  background: #e94b4b;
+}
+
+.mode-toggle {
+  background: transparent;
+  color: #2f7dfa;
+  border: 1px solid #2f7dfa;
+}
+
+.chat-log {
+  margin-top: 16px;
+}
+
+.chat-item {
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+}
+
+.chat-item.user {
+  background: #e8f0ff;
+  text-align: right;
+}
+
+.chat-item.assistant {
+  background: #f7f7f7;
+}
+
+footer {
+  margin-top: 18px;
+  font-size: 0.95rem;
+  color: #606770;
+}
