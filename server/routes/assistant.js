@@ -18,26 +18,32 @@ router.post('/query', auth, async (req, res) => {
       console.warn('Gemini API key missing; returning demo response.');
       answer = `Demo assistant response for: "${prompt}". Add GEMINI_API_KEY to the server .env for real Gemini answers.`;
     } else {
-      const openaiResponse = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
+      // Using Google Generative AI (Gemini) API with gemini-flash-latest
+      const systemPrompt = 'You are an intelligent AI assistant that speaks naturally and completes voice-driven tasks.';
+      const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}`;
+      
+      const geminiResponse = await axios.post(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
         {
-          model: 'gpt-4.1-mini',
-          messages: [
-            { role: 'system', content: 'You are an intelligent AI assistant that speaks naturally and completes voice-driven tasks.' },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.8,
-          max_tokens: 600,
+          contents: [
+            {
+              parts: [
+                {
+                  text: fullPrompt
+                }
+              ]
+            }
+          ]
         },
         {
           headers: {
-            Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
+            'X-goog-api-key': apiKey
           },
         }
       );
 
-      answer = openaiResponse.data.choices?.[0]?.message?.content || 'I could not generate a response.';
+      answer = geminiResponse.data.candidates?.[0]?.content?.parts?.[0]?.text || 'I could not generate a response.';
     }
 
     res.json({ answer });

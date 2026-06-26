@@ -1,8 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 const auth = require('../middleware/auth');
+const userStore = require('../utils/userStore');
 
 const router = express.Router();
 
@@ -13,14 +13,13 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await userStore.findByEmail(email);
     if (existingUser) {
       return res.status(409).json({ message: 'Email already registered.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = new User({ name, email, password: hashedPassword });
-    await user.save();
+    const user = await userStore.createUser({ name, email, password: hashedPassword });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
@@ -37,7 +36,7 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await userStore.findByEmail(email);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
@@ -57,11 +56,12 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await userStore.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
-    res.json({ user });
+    const safeUser = userStore.toSafeUser(user);
+    res.json({ user: safeUser });
   } catch (error) {
     console.error('Fetch user error:', error);
     res.status(500).json({ message: 'Failed to fetch user details.' });

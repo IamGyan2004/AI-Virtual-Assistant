@@ -3,11 +3,9 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 const dotenv = require('dotenv');
-const bcrypt = require('bcryptjs');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const User = require('./models/User');
 const authRoutes = require('./routes/auth');
 const assistantRoutes = require('./routes/assistant');
+const userStore = require('./utils/userStore');
 
 dotenv.config();
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
@@ -44,43 +42,22 @@ app.get('*', (req, res) => {
   res.send('AI Virtual Assistant backend is running. Use /api/health for JSON status.');
 });
 
-async function createMemoryMongoUri() {
-  const mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
-  console.log('Started in-memory MongoDB instance');
-  return uri;
-}
-
 async function startServer() {
   try {
-    let mongoUri = process.env.MONGO_URI;
-
-    if (mongoUri) {
+    if (process.env.MONGO_URI) {
       try {
-        await mongoose.connect(mongoUri, {
+        await mongoose.connect(process.env.MONGO_URI, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
         });
         console.log('Connected to MongoDB');
       } catch (error) {
         console.warn('Failed to connect to configured MongoDB URI:', error.message);
-        mongoUri = await createMemoryMongoUri();
-        await mongoose.connect(mongoUri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        });
-        console.log('Connected to fallback in-memory MongoDB');
+        console.log('Falling back to in-memory user store');
       }
-    } else {
-      mongoUri = await createMemoryMongoUri();
-      await mongoose.connect(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log('Connected to in-memory MongoDB');
     }
 
-    await ensureDemoUser();
+    await userStore.ensureDemoUser();
 
     app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);
@@ -88,23 +65,6 @@ async function startServer() {
   } catch (error) {
     console.error('Failed to start server:', error.message);
     process.exit(1);
-  }
-}
-
-async function ensureDemoUser() {
-  try {
-    const demoEmail = 'demo@assistant.local';
-    const demoPassword = 'Password123!';
-    const existingUser = await User.findOne({ email: demoEmail });
-    if (!existingUser) {
-      const hashedPassword = await bcrypt.hash(demoPassword, 12);
-      await User.create({ name: 'Demo User', email: demoEmail, password: hashedPassword });
-      console.log(`Seeded demo user: ${demoEmail} / ${demoPassword}`);
-    } else {
-      console.log('Demo user already exists:', demoEmail);
-    }
-  } catch (error) {
-    console.error('Seed user error:', error.message);
   }
 }
 
